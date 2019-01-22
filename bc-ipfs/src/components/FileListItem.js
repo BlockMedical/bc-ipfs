@@ -34,7 +34,7 @@ class FileListItem extends Component {
       const key = 'FileListItemFetchKeyForIPFS-' + hashId;
       bridge.registerHandler(key, (data, responseCallback) => {
         console.log('FileListItemFetchKeyForIPFS ipfsMetadataHash from iOS ' + data.ipfsMetadataHash);
-        this.fileListItemFetchKeyForIPFS(data.ipfsMetadataHash);
+        this.fileListItemFetchKeyForIPFS(hashId);
         let responseData = { 'callback from JS': 'FileListItemFetchKeyForIPFS' };
         responseCallback(responseData);
       });
