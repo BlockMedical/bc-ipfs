@@ -76,9 +76,11 @@ class FileListItem extends Component {
     } else {
       confirmAlert({
         title: 'Confirm to access',
-        message: `Access this file will cost ${div18decimals(
-          this.props.tokenCost,
-        )} BMD tokens, click 'Yes' to access or 'No' to cancel.`,
+        message:
+          "If you have already accessed this before, you can ignore this alert and click 'Yes'.  " +
+          `Access this file will cost ${div18decimals(
+            this.props.tokenCost,
+          )} BMD tokens, click 'Yes' to continue or 'No' to cancel.`,
         buttons: [
           {
             label: 'Yes',
