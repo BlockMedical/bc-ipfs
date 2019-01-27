@@ -114,101 +114,154 @@ class FileListItem extends Component {
           console.log('Applying the first eth account[0]: ' + submit_acct + ' for contract ' + contract_address);
         })
         .then(() => {
+          let realKey = '';
+          let decryptIPFSHash = '';
           lib_reward_contract.methods
-            .decryptIPFS(a_ipfsmeta)
-            .send(
+            .fetchParallelKeyForIPFS(a_ipfsmeta)
+            .call(
               {
                 from: submit_acct,
               },
-              (error, transactionHash) => {
-                if (transactionHash) {
-                  const { hashId } = this.state;
-
-                  console.log('decryptIPFS tx=' + transactionHash);
-                  this.setupWebViewJavascriptBridge(bridge => {
-                    bridge.callHandler(
-                      'FileListItemAccessButtonDidTap',
-                      { [transactionHash]: { type: 'accessFile', hashId: hashId } },
-                      response => {
-                        console.log('callback from iOS ' + response);
-                      },
-                    );
-                  });
+              (error, result) => {
+                if (result) {
+                  console.log(
+                    'fetching decrypted 1st_partial_key=' +
+                      result[0] +
+                      ' 2nd_partial_key=' +
+                      result[1] +
+                      ' encryptedHash=' +
+                      result[2] +
+                      ' cost=' +
+                      result[3],
+                  );
+                  try {
+                    realKey = result[0] + '' + result[1];
+                    decryptIPFSHash = crypto_js.AES.decrypt('' + result[2], realKey).toString(crypto_js.enc.Utf8);
+                    a_encrypted_hash = result[2];
+                    console.log('ipfs=' + decryptIPFSHash);
+                  } catch (err) {
+                    console.error(err);
+                  }
                 } else {
-                  console.log('decryptIPFS failed for ipfsMetadata=' + a_ipfsmeta);
-                  // If error occurs here, it means we didn't even generate a tx due to
-                  // wallet locked, network issues, etc.
-                  this.setState({ ['btn_access_state']: 'normal' });
+                  console.log(
+                    'decryptIPFS failed for ipfsMetadata=' + a_ipfsmeta + ' encryptedHash=' + a_encrypted_hash,
+                  );
                 }
               },
             )
-            .catch(err => {
-              this.setState({ ['btn_access_state']: 'error' });
-              console.error('err = ' + err);
-              confirmAlert({
-                title: 'Error',
-                message: `Either you ran out of gas, or your wallet does not have sufficient BMD tokens, or the transaction was rejected`,
-                buttons: [
-                  {
-                    label: 'Got it!',
-                    onClick: () => {},
-                  },
-                ],
-              });
-            })
             .then(() => {
-              if (this.state.btn_access_state != 'error') {
-                let realKey = '';
-                let decryptIPFSHash = '';
-                console.log('Fetching pp metadata ' + a_ipfsmeta);
+              if (decryptIPFSHash != '') {
+                this.setState({ ['btn_access_state']: 'accessed' });
+                console.log('decrypted text shows real IPFS hash: ' + decryptIPFSHash);
+                this.setState({ ['bc_resp_hash']: decryptIPFSHash });
+                this.setState({ ['access_encrypted_hash']: a_encrypted_hash });
+              } else {
+                console.log("User didn't exchange BMD to access file: " + a_ipfsmeta);
+                console.log('Generate a tx with BMD access for ' + a_ipfsmeta);
                 lib_reward_contract.methods
-                  .fetchParallelKeyForIPFS(a_ipfsmeta)
-                  .call(
+                  .decryptIPFS(a_ipfsmeta)
+                  .send(
                     {
                       from: submit_acct,
                     },
-                    (error, result) => {
-                      if (result) {
-                        console.log(
-                          'fetching decrypted 1st_partial_key=' +
-                            result[0] +
-                            ' 2nd_partial_key=' +
-                            result[1] +
-                            ' encryptedHash=' +
-                            result[2] +
-                            ' cost=' +
-                            result[3],
-                        );
-                        try {
-                          realKey = result[0] + '' + result[1];
-                          decryptIPFSHash = crypto_js.AES.decrypt('' + result[2], realKey).toString(crypto_js.enc.Utf8);
-                          a_encrypted_hash = result[2];
-                          console.log('ipfs=' + decryptIPFSHash);
-                        } catch (err) {
-                          console.error(err);
-                        }
+                    (error, transactionHash) => {
+                      if (transactionHash) {
+                        const { hashId } = this.state;
+
+                        console.log('decryptIPFS tx=' + transactionHash);
+                        this.setupWebViewJavascriptBridge(bridge => {
+                          bridge.callHandler(
+                            'FileListItemAccessButtonDidTap',
+                            { [transactionHash]: { type: 'accessFile', hashId: hashId } },
+                            response => {
+                              console.log('callback from iOS ' + response);
+                            },
+                          );
+                        });
                       } else {
-                        console.log(
-                          'decryptIPFS failed for ipfsMetadata=' + a_ipfsmeta + ' encryptedHash=' + a_encrypted_hash,
-                        );
+                        console.log('decryptIPFS failed for ipfsMetadata=' + a_ipfsmeta);
+                        // If error occurs here, it means we didn't even generate a tx due to
+                        // wallet locked, network issues, etc.
+                        this.setState({ ['btn_access_state']: 'normal' });
                       }
                     },
                   )
+                  .catch(err => {
+                    this.setState({ ['btn_access_state']: 'error' });
+                    console.error('err = ' + err);
+                    confirmAlert({
+                      title: 'Error',
+                      message: `Either you ran out of gas, or your wallet does not have sufficient BMD tokens, or the transaction was rejected`,
+                      buttons: [
+                        {
+                          label: 'Got it!',
+                          onClick: () => {},
+                        },
+                      ],
+                    });
+                  })
                   .then(() => {
-                    if (decryptIPFSHash != '' && this.state.btn_access_state != 'error') {
-                      this.setState({ ['btn_access_state']: 'accessed' });
-                      console.log('decrypted text shows real IPFS hash: ' + decryptIPFSHash);
-                      this.setState({ ['bc_resp_hash']: decryptIPFSHash });
-                      this.setState({ ['access_encrypted_hash']: a_encrypted_hash });
+                    if (this.state.btn_access_state != 'error') {
+                      let realKey = '';
+                      let decryptIPFSHash = '';
+                      console.log('Fetching pp metadata ' + a_ipfsmeta);
+                      lib_reward_contract.methods
+                        .fetchParallelKeyForIPFS(a_ipfsmeta)
+                        .call(
+                          {
+                            from: submit_acct,
+                          },
+                          (error, result) => {
+                            if (result) {
+                              console.log(
+                                'fetching decrypted 1st_partial_key=' +
+                                  result[0] +
+                                  ' 2nd_partial_key=' +
+                                  result[1] +
+                                  ' encryptedHash=' +
+                                  result[2] +
+                                  ' cost=' +
+                                  result[3],
+                              );
+                              try {
+                                realKey = result[0] + '' + result[1];
+                                decryptIPFSHash = crypto_js.AES.decrypt('' + result[2], realKey).toString(
+                                  crypto_js.enc.Utf8,
+                                );
+                                a_encrypted_hash = result[2];
+                                console.log('ipfs=' + decryptIPFSHash);
+                              } catch (err) {
+                                console.error(err);
+                              }
+                            } else {
+                              console.log(
+                                'decryptIPFS failed for ipfsMetadata=' +
+                                  a_ipfsmeta +
+                                  ' encryptedHash=' +
+                                  a_encrypted_hash,
+                              );
+                            }
+                          },
+                        )
+                        .then(() => {
+                          if (decryptIPFSHash != '' && this.state.btn_access_state != 'error') {
+                            this.setState({ ['btn_access_state']: 'accessed' });
+                            console.log('decrypted text shows real IPFS hash: ' + decryptIPFSHash);
+                            this.setState({ ['bc_resp_hash']: decryptIPFSHash });
+                            this.setState({ ['access_encrypted_hash']: a_encrypted_hash });
+                          } else {
+                            console.log(
+                              'decrypted text failed, invalild, or empty, real IPFS hash: ' + decryptIPFSHash,
+                            );
+                            this.setState({ ['btn_access_state']: 'error' });
+                          }
+                        });
                     } else {
-                      console.log('decrypted text failed, invalild, or empty, real IPFS hash: ' + decryptIPFSHash);
-                      this.setState({ ['btn_access_state']: 'error' });
+                      console.log('decryptIPFS failed, do not fetch!');
                     }
-                  });
-              } else {
-                console.log('decryptIPFS failed, do not fetch!');
-              }
-            }); //submit to contract
+                  }); //submit to contract
+              } // end else statement for decryptIPFS TX generation
+            });
         });
     } catch (error) {
       console.log(error);
