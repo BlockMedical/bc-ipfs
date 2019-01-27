@@ -18,7 +18,7 @@
       "gas": 1500000
     },
     "trading_contract": {
-      "address": "0xf12bE19b07E60a0351e1060a3e702d75575b1DFd",
+      "address": "0xCC239Da0224D472e0bd3C16516cE1fca9553f938",
       "gasPrice": 12000000000,
       "gas": 75000,
       "minimal_fund": 5000000000000000
