@@ -49,7 +49,7 @@ class FileRegisterView extends Component {
               <p>
                 <Button
                   bsStyle="info"
-                  href="https://github.com/BlockMedical/BMD-distributed_hosting_projects/blob/master/BMD-OrionUsage.md"
+                  href="https://github.com/BlockMedical/BMD-distributed_hosting_projects/blob/master/BMD-OrionUsage/README.md"
                 >
                   See instructions here.
                 </Button>{' '}
