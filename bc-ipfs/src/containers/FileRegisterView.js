@@ -47,17 +47,11 @@ class FileRegisterView extends Component {
               </Alert>
               <p>Download our desktop tool to help you upload large files.</p>
               <p>
-                <Button bsStyle="info" href={CONFIG.desktop_tool.mac} disabled={isMobile.any()}>
-                  MacOS
-                </Button>{' '}
-                <Button bsStyle="info" href={CONFIG.desktop_tool.windows} disabled={isMobile.any()}>
-                  Window
-                </Button>{' '}
-                <Button bsStyle="info" href={CONFIG.desktop_tool.rpm} disabled={isMobile.any()}>
-                  Linux(RPM)
-                </Button>{' '}
-                <Button bsStyle="info" href={CONFIG.desktop_tool.deb} disabled={isMobile.any()}>
-                  Linux(Deb)
+                <Button
+                  bsStyle="info"
+                  href="https://github.com/BlockMedical/BMD-distributed_hosting_projects/blob/master/BMD-OrionUsage/README.md"
+                >
+                  See instructions here.
                 </Button>{' '}
               </p>
             </Panel.Body>
